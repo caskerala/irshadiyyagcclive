@@ -3,13 +3,15 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>ഓൺലൈൻ ക്ലാസുകൾ (YouTube Player)</title>
+  <title>ഓൺലൈൻ ക്ലാസുകൾ (Copy-Protected Player)</title>
   <style>
     * {
       box-sizing: border-box;
       margin: 0;
       padding: 0;
       font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+      user-select: none; /* ടെക്സ്റ്റ് സെലക്ട് ചെയ്യുന്നത് തടയുന്നു */
+      -webkit-user-select: none;
     }
 
     body {
@@ -45,8 +47,6 @@
       border-radius: 20px;
       font-size: 0.8rem;
       font-weight: bold;
-      text-transform: uppercase;
-      letter-spacing: 1px;
     }
 
     /* Main Container */
@@ -60,7 +60,7 @@
       gap: 20px;
     }
 
-    /* Video Section */
+    /* Video Player Area */
     .video-section {
       flex: 2.2;
       display: flex;
@@ -68,37 +68,98 @@
       gap: 15px;
     }
 
-    .player-box {
+    .custom-player-wrapper {
       position: relative;
       width: 100%;
       background: #000;
       border-radius: 12px;
       overflow: hidden;
       border: 1px solid #334155;
-      padding-bottom: 56.25%; /* 16:9 ratio */
-      height: 0;
       box-shadow: 0 10px 25px rgba(0,0,0,0.5);
     }
 
-    .player-box iframe {
+    .video-responsive {
+      position: relative;
+      padding-bottom: 56.25%; /* 16:9 ratio */
+      height: 0;
+    }
+
+    .video-responsive iframe {
       position: absolute;
       top: 0;
       left: 0;
       width: 100%;
       height: 100%;
       border: none;
+      pointer-events: none; /* യൂട്യൂബ് വിൻഡോയിലെ ക്ലിക്കുകൾ പൂർണ്ണമായി ബ്ലോക്ക് ചെയ്യുന്നു */
     }
 
-    /* ടൈറ്റിലിൽ തൊട്ട് യൂട്യൂബിലേക്ക് പോകാതിരിക്കാനുള്ള സുതാര്യമായ ഷീൽഡ് */
-    .yt-top-shield {
+    /* വീഡിയോയിൽ നേരിട്ട് ക്ലിക്ക് ചെയ്ത് Play / Pause ചെയ്യാൻ മാത്രം അനുവദിക്കുന്ന ലെയർ */
+    .video-click-layer {
       position: absolute;
       top: 0;
       left: 0;
       width: 100%;
-      height: 60px;
-      z-index: 5;
-      background: transparent;
-      cursor: default;
+      height: calc(100% - 50px);
+      z-index: 10;
+      cursor: pointer;
+    }
+
+    /* നമ്മുടെ സ്വന്തം കൺട്രോൾ ബാർ (ലിങ്ക് കോപ്പി ഓപ്ഷൻ ഉണ്ടാവില്ല) */
+    .custom-controls-bar {
+      height: 50px;
+      background: #111827;
+      display: flex;
+      align-items: center;
+      padding: 0 15px;
+      gap: 12px;
+      z-index: 20;
+      border-top: 1px solid #1f2937;
+    }
+
+    .ctrl-btn {
+      background: none;
+      border: none;
+      color: #fff;
+      font-size: 1.15rem;
+      cursor: pointer;
+      padding: 6px;
+      border-radius: 4px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      transition: 0.2s;
+    }
+
+    .ctrl-btn:hover {
+      color: #38bdf8;
+      background: rgba(255, 255, 255, 0.08);
+    }
+
+    .time-text {
+      font-size: 0.85rem;
+      color: #94a3b8;
+      white-space: nowrap;
+    }
+
+    .progress-bar {
+      flex: 1;
+      height: 5px;
+      background: #374151;
+      border-radius: 5px;
+      cursor: pointer;
+      outline: none;
+      -webkit-appearance: none;
+      appearance: none;
+    }
+
+    .progress-bar::-webkit-slider-thumb {
+      -webkit-appearance: none;
+      width: 13px;
+      height: 13px;
+      border-radius: 50%;
+      background: #38bdf8;
+      cursor: pointer;
     }
 
     .video-details {
@@ -142,7 +203,7 @@
       cursor: not-allowed;
     }
 
-    /* ലളിതമായ പ്ലേലിസ്റ്റ് */
+    /* പ്ലേലിസ്റ്റ് */
     .playlist-section {
       flex: 1;
       background: #1e293b;
@@ -214,26 +275,32 @@
     }
   </style>
 </head>
-<body oncontextmenu="return false;">
+<body oncontextmenu="return false;" ondragstart="return false;">
 
-  <!-- Header -->
   <nav>
     <h1>🎓 ഓൺലൈൻ ക്ലാസ്സ് റൂം</h1>
-    <span class="free-badge">മാല മൌലിദ് </span>
+    <span class="free-badge">സൗജന്യ ക്ലാസുകൾ</span>
   </nav>
 
   <div class="main-container">
-    <!-- വീഡിയോ പ്ലെയർ -->
     <div class="video-section">
-      <div class="player-box">
-        <iframe 
-          id="ytFrame" 
-          src="" 
-          allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" 
-          allowfullscreen>
-        </iframe>
-        <!-- ടൈറ്റിൽ ക്ലിക്ക് തടയുന്ന ഷീൽഡ് -->
-        <div class="yt-top-shield"></div>
+      <!-- Player Wrapper -->
+      <div class="custom-player-wrapper" id="playerWrapper">
+        <div class="video-responsive">
+          <div id="ytPlayer"></div>
+        </div>
+
+        <!-- റൈറ്റ് ക്ലിക്ക് തടയുന്ന സുരക്ഷാ ഗ്ലാസ് ലെയർ -->
+        <div class="video-click-layer" onclick="togglePlay()"></div>
+
+        <!-- നമ്മുടെ സ്വന്തം കൺട്രോളുകൾ -->
+        <div class="custom-controls-bar">
+          <button class="ctrl-btn" id="playBtn" onclick="togglePlay()">▶</button>
+          <span class="time-text" id="timeDisplay">00:00 / 00:00</span>
+          <input type="range" class="progress-bar" id="progressBar" min="0" max="100" value="0" oninput="seekVideo(this.value)">
+          <button class="ctrl-btn" id="muteBtn" onclick="toggleMute()">🔊</button>
+          <button class="ctrl-btn" onclick="toggleFullScreen()">⛶</button>
+        </div>
       </div>
 
       <div class="video-details">
@@ -245,31 +312,120 @@
       </div>
     </div>
 
-    <!-- ക്ലാസ് ലിസ്റ്റ് -->
     <div class="playlist-section">
       <div class="playlist-title">എല്ലാ ക്ലാസുകളും</div>
       <div class="class-list" id="classListContainer"></div>
     </div>
   </div>
 
+  <!-- YouTube Official Player API -->
+  <script src="https://www.youtube.com/iframe_api"></script>
+
   <script>
     // ===============================================================
-    // നിങ്ങളുടെ YouTube വീഡിയോകളുടെ 11 അക്ഷരങ്ങളുള്ള ID നൽകുക
-    // (ഉദാ: https://youtu.be/M7lc1UVf-VE എന്നതിൽ M7lc1UVf-VE ആണ് ID)
+    // നിങ്ങളുടെ YouTube വീഡിയോകളുടെ 11 അക്ഷരങ്ങളുള്ള ID ഇവിടെ നൽകുക
     // ===============================================================
     const videoList = [
-      { id: "vKeXnVFZUh8", title: "മാല മൌലിദ് : ക്ലാസ്സ്‌ 26" },
+       { id: "vKeXnVFZUh8", title: "മാല മൌലിദ് : ക്ലാസ്സ്‌ 26" },
       { id: "zE01B7ODcPU", title: "മാല മൌലിദ് : ക്ലാസ്സ്‌ 27" },
       { id: "xAkOoOMD6QA", title: "മാല മൌലിദ് : ക്ലാസ്സ്‌ 28" },
       { id: "NXHoTtYmuuI", title: "മാല മൌലിദ് : ക്ലാസ്സ്‌ 29" },
       { id: "3JZ_D3E", title: "മാല മൌലിദ് : ക്ലാസ്സ്‌ 30" },
       { id: "RgKAFK5", title: "മാല മൌലിദ് : ക്ലാസ്സ്‌ 31" }
-      // കൂടുതൽ ക്ലാസുകൾ വേണമെങ്കിൽ താഴേക്ക് { id: "...", title: "..." } ചേർക്കാം
     ];
 
+    let player;
     let currentIndex = 0;
+    let isApiReady = false;
+    let progressInterval = null;
 
-    // ക്ലാസ് ലിസ്റ്റ് റെൻഡർ ചെയ്യുന്നു
+    function onYouTubeIframeAPIReady() {
+      isApiReady = true;
+      loadVideo(0);
+    }
+
+    function initPlayer(videoId) {
+      if (player) {
+        player.loadVideoById(videoId);
+        return;
+      }
+
+      player = new YT.Player('ytPlayer', {
+        videoId: videoId,
+        playerVars: {
+          controls: 0,        // യൂട്യൂബിന്റെ കൺട്രോളുകളും ലിങ്ക് ഓപ്ഷനുകളും മറയ്ക്കുന്നു
+          disablekb: 1,       // കീബോർഡ് വഴിമാറ്റങ്ങൾ തടയുന്നു
+          modestbranding: 1,  // യൂട്യൂബ് ലോഗോ ഒഴിവാക്കുന്നു
+          rel: 0,             // മറ്റ് വീഡിയോ റെക്കമൻഡേഷൻ ഒഴിവാക്കുന്നു
+          fs: 0               // ഒറിജിനൽ ഫുൾസ്ക്രീൻ ബട്ടൺ മറയ്ക്കുന്നു
+        },
+        events: {
+          'onReady': () => {
+            progressInterval = setInterval(updateProgress, 500);
+          },
+          'onStateChange': (e) => {
+            const playBtn = document.getElementById("playBtn");
+            if (e.data === YT.PlayerState.PLAYING) {
+              playBtn.innerText = "⏸";
+            } else {
+              playBtn.innerText = "▶";
+            }
+          }
+        }
+      });
+    }
+
+    // Play / Pause മാറ്റുന്നു
+    function togglePlay() {
+      if (!player) return;
+      (player.getPlayerState() === YT.PlayerState.PLAYING) ? player.pauseVideo() : player.playVideo();
+    }
+
+    // ശബ്ദം ഓഫ് / ഓൺ
+    function toggleMute() {
+      if (!player) return;
+      const muteBtn = document.getElementById("muteBtn");
+      if (player.isMuted()) {
+        player.unMute();
+        muteBtn.innerText = "🔊";
+      } else {
+        player.mute();
+        muteBtn.innerText = "🔇";
+      }
+    }
+
+    // വീഡിയോ മുന്നോട്ടും പിന്നോട്ടും മാറ്റുന്നു
+    function seekVideo(val) {
+      if (!player) return;
+      player.seekTo((val / 100) * player.getDuration(), true);
+    }
+
+    function updateProgress() {
+      if (!player || typeof player.getCurrentTime !== 'function') return;
+      const current = player.getCurrentTime() || 0;
+      const duration = player.getDuration() || 0;
+
+      if (duration > 0) {
+        document.getElementById("progressBar").value = (current / duration) * 100;
+        document.getElementById("timeDisplay").innerText = `${formatTime(current)} / ${formatTime(duration)}`;
+      }
+    }
+
+    function formatTime(sec) {
+      const m = Math.floor(sec / 60);
+      const s = Math.floor(sec % 60);
+      return `${m < 10 ? '0' : ''}${m}:${s < 10 ? '0' : ''}${s}`;
+    }
+
+    function toggleFullScreen() {
+      const wrapper = document.getElementById("playerWrapper");
+      if (!document.fullscreenElement) {
+        wrapper.requestFullscreen().catch(err => alert("Fullscreen Error: " + err.message));
+      } else {
+        document.exitFullscreen();
+      }
+    }
+
     function renderList() {
       const container = document.getElementById("classListContainer");
       container.innerHTML = "";
@@ -287,19 +443,19 @@
       });
     }
 
-    // വീഡിയോ മാറ്റുന്ന ഫംഗ്ഷൻ
     function loadVideo(index) {
       currentIndex = index;
       const video = videoList[index];
 
-      // YouTube Embed URL (No download, related videos from same channel only)
-      const ytEmbedUrl = `https://www.youtube-nocookie.com/embed/${video.id}?autoplay=1&rel=0&modestbranding=1&iv_load_policy=3`;
-      
-      document.getElementById("ytFrame").src = ytEmbedUrl;
       document.getElementById("videoTitle").innerText = video.title;
-
       document.getElementById("prevBtn").disabled = (currentIndex === 0);
       document.getElementById("nextBtn").disabled = (currentIndex === videoList.length - 1);
+
+      if (isApiReady) {
+        initPlayer(video.id);
+      } else {
+        setTimeout(() => loadVideo(index), 300);
+      }
 
       renderList();
     }
@@ -312,9 +468,15 @@
       if (currentIndex > 0) loadVideo(currentIndex - 1);
     }
 
-    // പേജ് തുറക്കുമ്പോൾ ആദ്യ ക്ലാസ് നേരിട്ട് പ്ലേ ചെയ്യുന്നു
+    // കോഡ് ഇൻസ്പെക്ട് (F12, Ctrl+U) ചെയ്യുന്നത് തടയുന്നു
+    document.addEventListener('keydown', function(e) {
+      if (e.key === 'F12' || (e.ctrlKey && (e.key === 'u' || e.key === 'U' || e.key === 's' || e.key === 'S' || (e.shiftKey && (e.key === 'I' || e.key === 'i'))))) {
+        e.preventDefault();
+        return false;
+      }
+    });
+
     renderList();
-    loadVideo(0);
   </script>
 </body>
 </html>
